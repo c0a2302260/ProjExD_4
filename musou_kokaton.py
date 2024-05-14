@@ -133,6 +133,7 @@ class Bomb(pg.sprite.Sprite):
         pg.draw.circle(self.image, color, (rad, rad), rad)
         self.image.set_colorkey((0, 0, 0))
         self.rect = self.image.get_rect()
+        self.state = "active"
         # 爆弾を投下するemyから見た攻撃対象のbirdの方向を計算
         self.vx, self.vy = calc_orientation(emy.rect, bird.rect)  
         self.rect.centerx = emy.rect.centerx
@@ -270,6 +271,24 @@ class Gravity(pg.sprite.Sprite):
         if self.life<0:
             self.kill()
         
+class Emp:
+    """
+    EMP
+    """
+    def __init__(self, emys: pg.sprite.Group, bombs: pg.sprite.Group, screen: pg.Surface):
+        self.image = pg.Surface((WIDTH, HEIGHT))
+        self.image.fill((255, 255, 0))
+        self.image.set_alpha(100)
+        screen.blit(self.image, [0, 0])
+        pg.display.update()
+        time.sleep(0.05)
+        for emy in emys:
+            emy.interval = float("inf")
+            emy.image = pg.transform.laplacian(emy.image)
+            emy.image.set_colorkey((0, 0, 0))
+        for bomb in bombs:
+            bomb.speed = bomb.speed / 2
+            bomb.state = "inactive"
 
 
 def main():
@@ -304,12 +323,13 @@ def main():
                 if score.value >= 200:
                     score.value -= 200
                     gra.add(Gravity(400))
+            if event.type == pg.KEYDOWN and event.key == pg.K_e and score.value >= 20:
+                Emp(emys, bombs, screen)
+                score.value -= 20
         for bomb in pg.sprite.groupcollide(bombs, gra, True, False).keys():
             exps.add(Explosion(bomb, 50)) # 爆発エフェクト爆弾
         for emy in pg.sprite.groupcollide(emys, gra, True, False).keys():
             exps.add(Explosion(emy, 50)) # 爆発エフェクトエネミィ
-
-                    
 
         screen.blit(bg_img, [0, 0])
 
@@ -330,7 +350,7 @@ def main():
             exps.add(Explosion(bomb, 50))  # 爆発エフェクト
             score.value += 1  # 1点アップ
 
-        if len(pg.sprite.spritecollide(bird, bombs, True)) != 0:
+        if len([bomb for bomb in pg.sprite.spritecollide(bird, bombs, True) if bomb.state != "inactive"]) != 0:
             if bird.state == "hyper":
                 score.value += 1
                 exps.add(Explosion(bird, 100))
@@ -341,6 +361,7 @@ def main():
                 time.sleep(2)
                 return
         gra.update(screen)
+
         bird.update(key_lst, screen)
         beams.update()
         beams.draw(screen)
