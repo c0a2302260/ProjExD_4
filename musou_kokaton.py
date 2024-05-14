@@ -107,6 +107,10 @@ class Bird(pg.sprite.Sprite):
             self.hyper_life -= 1
             if self.hyper_life < 0:
                 self.state = "normal"
+        if key_lst[pg.K_LSHIFT]:
+            self.speed = 20
+        else:
+            self.speed = 10
         screen.blit(self.image, self.rect)
 
 
@@ -261,9 +265,9 @@ def main():
     beams = pg.sprite.Group()
     exps = pg.sprite.Group()
     emys = pg.sprite.Group()
-
     tmr = 0
     clock = pg.time.Clock()
+
     while True:
         key_lst = pg.key.get_pressed()
         for event in pg.event.get():
